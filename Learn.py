@@ -3,6 +3,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+import time
 
 
 def create_driver():
@@ -25,6 +26,8 @@ try:
     )
     
     articles = main.find_elements_by_tag_name("article")
+
+    time.sleep(10)
 
     for article in articles:
         header = article.find_element_by_class_name("entry-summary")
