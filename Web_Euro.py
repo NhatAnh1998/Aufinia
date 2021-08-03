@@ -1,0 +1,108 @@
+
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import Select
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.keys import Keys
+from difflib import SequenceMatcher
+from selenium.webdriver.chrome.options import Options
+import requests
+import pandas as pd
+import time
+
+
+
+def create_driver():
+    chrome_options = webdriver.ChromeOptions()
+    chrome_options.add_experimental_option("prefs", {"intl.accept_languages": "en-US"})
+    chrome_options.add_experimental_option("excludeSwitches", ['enable-automation']);
+    return webdriver.Chrome(executable_path='C:/Users/ADMIN/Downloads/ChromeDriver/chromedriver.exe', options=chrome_options)
+
+
+# df_company = pd.read_excel(r"C:\Users\ADMIN\Documents\Aufinia\LFA1_T077Y_LargeCountries.xlsx",sheet_name='Euro', converters={'LFA1_LIFNR':str,'LFA1_STCD1':str},usecols={'LFA1_LIFNR','LFA1_NAME1','COUNTRY','LFA1_STCD1','LFA1_LAND1'})
+df_company = pd.read_excel(r"C:\Users\ADMIN\Documents\Aufinia\Test.xlsx",sheet_name='Sheet2', converters={'LFA1_LIFNR':str,'LFA1_STCD1':str},usecols={'LFA1_LIFNR','LFA1_NAME1','COUNTRY','LFA1_STCD1','LFA1_LAND1'})
+
+# df_company_isnull = df_company.loc[(df_company['LFA1_LAND1'] == 'FR') & (df_company['LFA1_STCD1'].isnull() == True)]
+# df_company_isnull.reset_index(drop=True, inplace = True) 
+# df_company_isnull.shape
+
+# print(df_company.head())
+# print(df_company.info())
+
+
+driver = create_driver()
+driver.get('https://www.hithorizons.com/search?Name=')
+
+for idx in range(len(df_company)):
+   
+
+    try:
+            # get company_name, country_name from dataframe
+            company_name = df_company.loc[idx,'LFA1_NAME1']
+            country_name = df_company.loc[idx,'COUNTRY']
+
+            # send company_name keys
+            company_name_input = driver.find_element(By.ID, "Name")
+            company_name_input.clear()
+            company_name_input.send_keys(company_name)
+
+
+            # send country_name keys
+            country_name_input = driver.find_element(By.ID, "Address")
+            country_name_input.clear()
+            country_name_input.send_keys(country_name)
+
+            
+            #click search button
+            search_button = WebDriverWait(driver, 3).until(EC.element_to_be_clickable((By.XPATH, "//*[@id='main-content']/div[1]/div/form/div[1]/div[3]/button")))
+            driver.execute_script("arguments[0].click();", search_button)
+
+
+            time.sleep(4)
+            print(str(idx) +": "+str(company_name)) 
+
+            #click first href link
+            WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.XPATH, "//*[@id='main-content']/div[2]/div[1]/div/div[1]/div[1]/div[1]/h3/a"))).click()
+
+            driver.implicitly_wait(5)
+            secondary_name_tag = driver.find_element(By.XPATH,"//*[@id='chart-content']/div/div/div[1]/div[1]/div[2]/div/div[1]/ul/li[2]/strong").text.strip()
+
+            if secondary_name_tag == 'Secondary Name':
+                 # Get company name, address, tax_code
+                df_company.loc[idx,'Name_search'] = driver.find_element(By.XPATH, "//*[@id='chart-content']/div/div/div[1]/div[1]/div[2]/div/div[1]/ul/li[1]/span").text.strip()
+                df_company.loc[idx,'Address_search'] = driver.find_element(By.XPATH, "///*[@id='chart-content']/div/div/div[1]/div[1]/div[2]/div/div[1]/ul/li[3]/span").text.strip()
+                df_company.loc[idx,'Tax_code_search'] = driver.find_element(By.XPATH, "//*[@id='chart-content']/div/div/div[1]/div[1]/div[2]/div/div[1]/ul/li[4]/span").text.strip()
+                df_company.loc[idx,'Industry'] = driver.find_element(By.XPATH,  "//*[@id='chart-content']/div/div/div[1]/div[1]/div[2]/div/div[2]/ul/li[1]/span").text.strip()
+                df_company.loc[idx,'URLs'] = driver.current_url
+
+            else:
+                # Get company name, address, tax_code
+                df_company.loc[idx,'Name_search'] = driver.find_element(By.XPATH, "//*[@id='chart-content']/div/div/div[1]/div[1]/div[2]/div/div[1]/ul/li[1]/span").text.strip()
+                df_company.loc[idx,'Address_search'] = driver.find_element(By.XPATH, "//*[@id='chart-content']/div/div/div[1]/div[1]/div[2]/div/div[1]/ul/li[2]/span").text.strip()
+                df_company.loc[idx,'Tax_code_search'] = driver.find_element(By.XPATH, "//*[@id='chart-content']/div/div/div[1]/div[1]/div[2]/div/div[1]/ul/li[3]/span").text.strip()
+                df_company.loc[idx,'Industry'] = driver.find_element(By.XPATH,  "//*[@id='chart-content']/div/div/div[1]/div[1]/div[2]/div/div[2]/ul/li[1]/span").text.strip()
+                df_company.loc[idx,'URLs'] = driver.current_url
+
+            
+            time.sleep(2)
+            # Get back to previous page
+            driver.execute_script("window.history.go(-1)")
+    
+    except NoSuchElementException as exception:
+        df_company.loc[idx,'Exception'] = "No information found"
+        continue
+
+    finally:
+        # df_company.to_excel(r"C:\Users\ADMIN\Documents\Aufinia\Mautirius_Large_Result.xlsx",sheet_name='Sheet1') 
+        df_company.to_excel(r"C:\Users\ADMIN\Documents\Aufinia\Test_result.xlsx",sheet_name='Sheet1') 
+
+
+print(df_company)
+driver.close()
+
+
+    
+
