@@ -17,7 +17,7 @@ driver.get('https://www.techwithtim.net/')
 
 search_bar = driver.find_element_by_name("s")
 search_bar.clear()
-search_bar.send_keys("python", Keys.RETURN)
+search_bar.send_keys("Java", Keys.RETURN)
 
 # dùng trong TH các element lồng vào nhau (theo DOM => element cha -> element con)
 try:
@@ -27,7 +27,7 @@ try:
     
     articles = main.find_elements_by_tag_name("article")
 
-    time.sleep(10)
+    time.sleep(5)
 
     for article in articles:
         header = article.find_element_by_class_name("entry-summary")
